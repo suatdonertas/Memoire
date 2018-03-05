@@ -40,7 +40,8 @@ with open(path_hyper+str(args.architecture),'r') as f:
 ############################################################################### 
 # Extract features from Root Files #
 ############################################################################### 
-INPUT_FOLDER = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/factories_ZA/skimmedPlots_for_Florian/slurm/output/'
+#INPUT_FOLDER = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/factories_ZA/skimmedPlots_for_Florian/slurm/output/'
+INPUT_FOLDER = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/factories_ZA/add_met_mll_forFlorian/slurm/output/'
 print ('='*80)
 print ('Starting input from files')
 back_set = np.zeros((0,2))
@@ -78,11 +79,11 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
     
     jj_M = np.asarray(tree2array(t, branches='jj_M'))
     lljj_M = np.asarray(tree2array(t, branches='lljj_M'))
-    sample_weight = np.asarray(tree2array(t, branches='sample_weight'))
+    event_weight = np.asarray(tree2array(t, branches='event_weight'))
     if Sig: #Signal
         # Get the relative signal weights 
         relative_weight = f.Get('cross_section').GetVal()/f.Get('event_weight_sum').GetVal()
-        weight = (sample_weight*relative_weight).reshape(-1,1)
+        weight = (event_weight*relative_weight).reshape(-1,1)
         # Renormalize signal to make them equiprobable
         weight *= S/N
         sig_weight = np.concatenate((sig_weight,weight),axis=0)
@@ -105,7 +106,7 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
     else : # Background
         # Set the background weights
         relative_weight = f.Get('cross_section').GetVal()/f.Get('event_weight_sum').GetVal()
-        weight = (sample_weight*relative_weight).reshape(-1,1)
+        weight = (event_weight*relative_weight).reshape(-1,1)
         back_weight = np.concatenate((back_weight,weight),axis=0)
 
         # Append mlljj and mjj data to background dataset
@@ -180,7 +181,7 @@ for l in range(0,archi.shape[0]): # Loop over the architectures in the file
     err_avg = 0
     AUC_avg = 0
     nf = data.shape[1]-2 # minus targets and weights
-    L2 = 0.
+    L2 = 0.01
 
     while i <= K:
         print ('Cross validation step, %i/%i'%(i,K))
