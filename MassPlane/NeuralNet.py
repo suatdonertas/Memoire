@@ -79,14 +79,14 @@ def NeuralNet(data,target,weight,layers,step=1,L2=0,print_plots=False,print_mode
     # Callback #
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='min')
     csv_logger = CSVLogger(path_model+'training_step_'+str(step)+'.log')
-    reduceLR = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, verbose=0, mode='min', epsilon=0.0001, cooldown=0, min_lr=0.0001)
+    reduceLR = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, verbose=1, mode='min', epsilon=0.0001, cooldown=0, min_lr=0.0001)
     checkpoint = ModelCheckpoint(path_model+'weight_step'+str(step)+'.h5', monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True, mode='min', period=1)
     Callback_list = [csv_logger,checkpoint,reduceLR,early_stopping]
 
 
     # Fit #
-    epoch = 30
-    batch = 5000
+    epoch = 50
+    batch = 1000
     history = DNN.fit(X_train, T_train, sample_weight=W_train, epochs=epoch, batch_size=batch, verbose=2, validation_data=(X_test,T_test,W_test), callbacks=Callback_list)
 
     # Print history #

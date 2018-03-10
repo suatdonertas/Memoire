@@ -29,7 +29,7 @@ from NNOutput import NNOutput
 from cutWindow import massWindow
 
 ############################################################################### 
-# Ellpise model #
+# Ellipse model #
 ############################################################################### 
 path_json = '/home/ucl/cp3/fbury/Memoire/MassPlane/graph_ROC/ellipseParam.json'
 
@@ -76,7 +76,7 @@ def NNOperatingPoint(out,weight,cut):
     """ Returns array of number fractions for given output and array of cuts """
     frac = np.zeros(cut.shape[0])
     for i in range(0,cut.shape[0]):
-        check_in = np.greater_equal(out,cut[i])
+        check_in = np.greater(out,cut[i])
         frac[i] = np.sum(weight[check_in])/np.sum(weight)
     return frac
 
@@ -84,7 +84,7 @@ def EllipseOperatingPoint(out,weight,cut):
     """ Returns array of number fractions for given output and array of cuts """
     frac = np.zeros(cut.shape[0])
     for i in range(0,cut.shape[0]):
-        check_in = np.less_equal(out,cut[i])
+        check_in = np.less(out,cut[i])
         frac[i] = np.sum(weight[check_in])/np.sum(weight)
     return frac
 ############################################################################### 

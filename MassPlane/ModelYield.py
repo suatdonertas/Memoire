@@ -76,7 +76,7 @@ for name in glob.glob(path_tree+'*.root'):
         N_TT_Other = np.sum(TT_Other[TT_Other[:]['NN_out']>cn]['weight'])
         N_TTTo2L2Nu = np.sum(TTTo2L2Nu[TTTo2L2Nu[:]['NN_out']>cn]['weight'])
 
-        print ('sig\t%0.f\t%0.2f'%(sig[sig[:]['NN_out']>cn].shape[0],N_sig))
+        print ('sig\t%0.f\t%0.5f'%(sig[sig[:]['NN_out']>cn].shape[0],N_sig))
         print ('DYToLL_0J\t%0.f\t%0.2f'%(DYToLL_0J[DYToLL_0J[:]['NN_out']>cn].shape[0],N_DYToLL_0J))
         print ('DYToLL_1J\t%0.f\t%0.2f'%(DYToLL_1J[DYToLL_1J[:]['NN_out']>cn].shape[0],N_DYToLL_1J))
         print ('DYToLL_2J\t%0.f\t%0.2f'%(DYToLL_2J[DYToLL_2J[:]['NN_out']>cn].shape[0],N_DYToLL_2J))
@@ -93,7 +93,7 @@ for name in glob.glob(path_tree+'*.root'):
         N_TT_Other = np.sum(TT_Other[TT_Other[:]['Ell_out']<ce]['weight'])
         N_TTTo2L2Nu = np.sum(TTTo2L2Nu[TTTo2L2Nu[:]['Ell_out']<ce]['weight'])
 
-        print ('sig\t%0.f\t%0.2f'%(sig[sig[:]['Ell_out']<ce].shape[0],N_sig))
+        print ('sig\t%0.f\t%0.5f'%(sig[sig[:]['Ell_out']<ce].shape[0],N_sig))
         print ('DYToLL_0J\t%0.f\t%0.2f'%(DYToLL_0J[DYToLL_0J[:]['Ell_out']<ce].shape[0],N_DYToLL_0J))
         print ('DYToLL_1J\t%0.f\t%0.2f'%(DYToLL_1J[DYToLL_1J[:]['Ell_out']<ce].shape[0],N_DYToLL_1J))
         print ('DYToLL_2J\t%0.f\t%0.2f'%(DYToLL_2J[DYToLL_2J[:]['Ell_out']<ce].shape[0],N_DYToLL_2J))

@@ -55,6 +55,9 @@ INPUT_FOLDER = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/fact
 print ('='*80)
 print ('Starting input from files')
 
+xsec = np.array([[0.63389,0.53676,0.41254,0.39846,0.30924,0.29973,0.22547,0.11122,0.10641,0.08736,0.04374,7.5130e-6,0.03721,0.01086,0.01051,0.0092366,2.4741e-5,2.1591e-7,0.0029526,0.0025357,5.51057e-6,3.99284e-8,9.82557e-10],[200,200,250,250,300,300,300,500,500,500,500,500,650,800,800,800,800,800,1000,1000,1000,2000,3000,],[50,100,50,100,50,100,200,50,100,200,300,400,50,50,100,200,400,700,50,200,500,1000,2000]]) #Computed with Olivier's code (xsec,mH,mA)
+
+
 # Get data from root files (sig+back)
 for name in glob.glob(INPUT_FOLDER+'*.root'):
     filename = name.replace(INPUT_FOLDER,'')
@@ -75,25 +78,39 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
     selection = 'met_pt<80 && ll_M>70 && ll_M<110'
     jj_M = np.asarray(tree2array(t, branches='jj_M',selection=selection))
     lljj_M = np.asarray(tree2array(t, branches='lljj_M',selection=selection))
-    event_weight = np.asarray(tree2array(t, branches='event_weight', selection=selection))
-    relative_weight = f.Get('cross_section').GetVal()/f.Get('event_weight_sum').GetVal()
+    total_weight = np.asarray(tree2array(t, branches='total_weight', selection=selection))
     L = 35922 
-    weight = L*(event_weight*relative_weight)#.reshape(-1,1)
 
     mH_array = np.ones(jj_M.shape[0])*mH_select
     mA_array = np.ones(jj_M.shape[0])*mA_select
 
     if Sig: #Signal
+        # Check if correct file #
         num = [int(s) for s in re.findall('\d+',filename )]
         if num[2]!=mH_select or num[3]!=mA_select:
             continue
         else:
             print ('Our file')
+
+        # Get the relative signal weights 
+        cross_section = 0
+        for c in range(0,xsec.shape[1]):
+            if xsec[1,c]==num[2] and xsec[2,c]==num[3]:
+                cross_section = xsec[0,c]
+        if cross_section == 0:
+            sys.exit('Could not find cross section in signal sample')
+        print ('\tCross section = ',cross_section)
+
+        relative_weight = cross_section/f.Get('event_weight_sum').GetVal()
+        weight = L*(total_weight*relative_weight)#.reshape(-1,1)
+
         sig_set = np.stack((lljj_M,jj_M,mH_array,mA_array,weight),axis=1)
-        sig_cs = cs
+        sig_cs = cross_section 
         sig_ws = ws
 
     else: #Background
+        relative_weight = f.Get('cross_section').GetVal()/f.Get('event_weight_sum').GetVal()
+        weight = L*(total_weight*relative_weight)#.reshape(-1,1)
         if filename.startswith('DYToLL_0J'):
             DYToLL_0J_cs = cs
             DYToLL_0J_ws = ws

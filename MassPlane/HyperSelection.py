@@ -51,6 +51,11 @@ back_weight = np.zeros((0,1))
 
 gen_choices = np.zeros((0,2)) # records all the new configurations of (mH,mA)
 
+xsec = np.array([[0.63389,0.53676,0.41254,0.39846,0.30924,0.29973,0.22547,0.11122,0.10641,0.08736,0.04374,7.5130e-6,0.03721,0.01086,0.01051,0.0092366,2.4741e-5,2.1591e-7,0.0029526,0.0025357,5.51057e-6,3.99284e-8,9.82557e-10],[200,200,250,250,300,300,300,500,500,500,500,500,650,800,800,800,800,800,1000,1000,1000,2000,3000,],[50,100,50,100,50,100,200,50,100,200,300,400,50,50,100,200,400,700,50,200,500,1000,2000]]) #Computed with Olivier's code (xsec,mH,mA)
+
+#for i in range(0,xsec.shape[1]):
+    #print (xsec[0,i],xsec[1,i],xsec[2,i])
+
 S = 0 # Number of signal events
 N_sig = 0 # Number of events with same (mH,mA)
 # Get number of signal events
@@ -75,24 +80,33 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
 
     f = ROOT.TFile.Open(name)
     t = f.Get("t")
-    N = t.GetEntries()
     
-    jj_M = np.asarray(tree2array(t, branches='jj_M'))
-    lljj_M = np.asarray(tree2array(t, branches='lljj_M'))
-    event_weight = np.asarray(tree2array(t, branches='event_weight'))
+    selection = 'met_pt<80 && ll_M>70 && ll_M<110'
+    jj_M = np.asarray(tree2array(t, branches='jj_M',selection=selection))
+    lljj_M = np.asarray(tree2array(t, branches='lljj_M',selection=selection))
+    total_weight = np.asarray(tree2array(t, branches='total_weight',selection=selection))
+    N = jj_M.shape[0]
     if Sig: #Signal
-        # Get the relative signal weights 
-        relative_weight = f.Get('cross_section').GetVal()/f.Get('event_weight_sum').GetVal()
-        weight = (event_weight*relative_weight).reshape(-1,1)
-        # Renormalize signal to make them equiprobable
-        weight *= S/N
-        sig_weight = np.concatenate((sig_weight,weight),axis=0)
-        
         # Extract mA, mH generated from file title
         num = [int(s) for s in re.findall('\d+',filename )]
         print ('\tmH = ',num[2],', mA = ',num[3])
         mH = np.ones(N)*num[2]
         mA = np.ones(N)*num[3]
+
+        # Get the relative signal weights 
+        cross_section = 0
+        for c in range(0,xsec.shape[1]):
+            if xsec[1,c]==num[2] and xsec[2,c]==num[3]:
+                cross_section = xsec[0,c]
+        if cross_section == 0:
+            sys.exit('Could not find cross section in signal sample') 
+        print ('\tCross section = ',cross_section)
+        #relative_weight = cross_section/f.Get('event_weight_sum').GetVal()
+        weight = (total_weight/np.sum(total_weight)).reshape(-1,1)
+        # Renormalize signal to make them equiprobable
+        weight *= S/N
+        sig_weight = np.concatenate((sig_weight,weight),axis=0)
+        
 
         # Records new couple of generated mA and mH
         gen_config = np.c_[num[2],num[3]]
@@ -106,7 +120,7 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
     else : # Background
         # Set the background weights
         relative_weight = f.Get('cross_section').GetVal()/f.Get('event_weight_sum').GetVal()
-        weight = (event_weight*relative_weight).reshape(-1,1)
+        weight = (total_weight*relative_weight).reshape(-1,1)
         back_weight = np.concatenate((back_weight,weight),axis=0)
 
         # Append mlljj and mjj data to background dataset
@@ -127,14 +141,8 @@ print ('Starting target association')
 sum_back_weight = np.sum(back_weight)
 sum_sig_weight = np.sum(sig_weight)
 back_weight = back_weight*(sum_sig_weight/sum_back_weight)
-
-sig_weight *= 1e7
-back_weight *= 1e7
-
-#print (sig_weight)
-#print (back_weight)
-#print (np.sum(sig_weight))
-#print (np.sum(back_weight))
+sig_weight *= 100
+back_weight *= 100
 
 # Assign random (mH,mA) to background with same probabilities for each signal sample
 proba = np.ones(N_sig)/N_sig

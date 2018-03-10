@@ -132,7 +132,7 @@ while mH_pos[s]<=1000:
         inc_x = 50
     s += 1
 
-mHmA = np.c_[mH_pos,mA_pos]
+#mHmA = np.c_[mH_pos,mA_pos]
 
 print (mHmA)
 print (mHmA.shape)
@@ -261,7 +261,7 @@ for c in range(0,mHmA.shape[0]):
     for idx,val in enumerate(test_isin):
         if val == True:
             test_check = True
-    test_check = False # Don't want the ellipses now
+    #test_check = False # Don't want the ellipses now
     if test_check == True:
         x,y,a,b,theta = getEllipseConf(mHmA[c,1],mHmA[c,0],ellipse_conf)
         t = theta * 57.29 # radians -> Degrees

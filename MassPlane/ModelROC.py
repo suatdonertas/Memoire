@@ -35,7 +35,7 @@ args = parser.parse_args()
 print ('Model used : '+str(args.model))
 
 path_tree = '/home/ucl/cp3/fbury/storage/NNAndELLipseOutputTrees/model_'+str(args.model)+'/'
-path_plots = '/home/ucl/cp3/fbury/Memoire/MassPlane/graph_ROC/model_test_'+str(args.model)+'/'
+path_plots = '/home/ucl/cp3/fbury/Memoire/MassPlane/graph_ROC/model_test2_'+str(args.model)+'/'
 if not os.path.exists(path_plots):
     os.makedirs(path_plots)
 ################################################################################
@@ -67,18 +67,21 @@ for name in glob.glob(path_tree+'*.root'):
     # NN and Ellipse Output #
     target_sig = np.ones(S)
     target_back = np.zeros(B)
-    weight = np.concatenate((sig[:]['weight'],back[:]['weight']),axis=0)
-    target = np.concatenate((target_sig,target_back),axis=0) 
+    weight_NN = np.concatenate((sig[:]['weight'],back[:]['weight']),axis=0)
+    target_NN = np.concatenate((target_sig,target_back),axis=0) 
     out_NN = np.concatenate((sig[:]['NN_out'],back[:]['NN_out']),axis=0)
-    out_Ell = np.concatenate((sig[:]['Ell_out'],back[:]['Ell_out']),axis=0)
+    out_Ell = np.concatenate((sig[sig[:]['Ell_out']<10]['Ell_out'],back[back[:]['Ell_out']<10]['Ell_out']),axis=0)
+    target_Ell = np.concatenate((target_sig[sig[:]['Ell_out']<10],target_back[back[:]['Ell_out']<10]),axis=0)
+    weight_Ell = np.concatenate((sig[sig[:]['Ell_out']<10]['weight'],back[back[:]['Ell_out']<10]['weight']),axis=0)
+    #out_Ell = out_Ell[out_Ell<10]
     out_Ell = 1-(out_Ell/np.max(out_Ell))
 
     # ROC evaluation #
-    back_eff_z,sig_eff_z,tresholds = roc_curve(target,out_NN,sample_weight=weight)
-    back_eff_e,sig_eff_e,tresholds = roc_curve(target,out_Ell,sample_weight=weight)
+    back_eff_z,sig_eff_z,tresholds = roc_curve(target_NN,out_NN,sample_weight=weight_NN)
+    back_eff_e,sig_eff_e,tresholds = roc_curve(target_Ell,out_Ell,sample_weight=weight_Ell)
 
-    roc_auc_z = roc_auc_score(target,out_NN,sample_weight=weight)
-    roc_auc_e = roc_auc_score(target,out_Ell,sample_weight=weight)
+    roc_auc_z = roc_auc_score(target_NN,out_NN,sample_weight=weight_NN)
+    roc_auc_e = roc_auc_score(target_Ell,out_Ell,sample_weight=weight_Ell)
 
     # Significance estimation #
     Z_NN = np.array([])
@@ -97,7 +100,7 @@ for name in glob.glob(path_tree+'*.root'):
     op_sig_Ell = EllipseOperatingPoint(sig[:]['Ell_out'],sig[:]['weight'],sigma_ell)
     op_back_Ell = EllipseOperatingPoint(back[:]['Ell_out'],back[:]['weight'],sigma_ell)
 
-    # Plot Section #
+    # ROC curve #
     fig1 = plt.figure(1,figsize=(10,5))
     ax1 = plt.subplot(111)
     plt.title('ROC Curve : $m_H$ = %0.f, $m_A$ = %0.f'%(mH,mA))
@@ -126,8 +129,40 @@ for name in glob.glob(path_tree+'*.root'):
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(lines1[0:2]+lines2+lines1[2:],labels1[0:2]+labels2+labels1[2:],loc='upper left',bbox_to_anchor=(1.1, 1),fancybox=True, shadow=True,labelspacing=0.8)
     #plt.show()
-    fig1.savefig(path_plots+'mH_'+str(mH)+'_mA_'+str(mA)+'.png')
+    fig1.savefig(path_plots+'ROC_mH_'+str(mH)+'_mA_'+str(mA)+'.png')
     print ('[INFO] ROC curve plot saved as : '+str(mH)+'_mA_'+str(mA)+'.png')
     plt.close()
 
+    # NN output plot #
+    fig2 = plt.figure(2)
+    plt.hist(sig[:]['NN_out'],color='g',alpha=0.7,label='Signal',normed=1,bins=40)
+    plt.hist(back[:]['NN_out'],color='r',alpha=0.7,label='Background',normed=1,bins=40)
+    plt.legend(loc='upper left')
+    plt.title('NN Output')
+    plt.xlabel('NN discriminant')
+    plt.ylabel('Occurences [Normalised]')
+    fig2.savefig(path_plots+'NNOut_mH_'+str(mH)+'_mA_'+str(mA)+'.png')
+    plt.close()
 
+    # Ellipse output plot #
+    fig3 = plt.figure(3)
+    bins = np.linspace(0,10,40)
+    plt.hist(sig[:]['Ell_out'],color='g',alpha=0.7,label='Signal', normed=1, bins=bins)
+    plt.hist(back[:]['Ell_out'],color='r',alpha=0.7,label='Background', normed=1,bins=bins)
+    plt.legend(loc='upper right')
+    plt.title('Ellipse Output')
+    plt.xlabel('Number of sigmas')
+    plt.ylabel('Occurences [Normalised]')
+    fig3.savefig(path_plots+'EllOut_mH_'+str(mH)+'_mA_'+str(mA)+'.png')
+    plt.close()
+
+    # Normed Ellipse output plot #
+    fig3 = plt.figure(3)
+    plt.hist(out_Ell[:S],color='g',alpha=0.7,label='Signal', normed=1, bins=40)
+    plt.hist(out_Ell[S:],color='r',alpha=0.7,label='Background', normed=1, bins=40)
+    plt.legend(loc='upper left')
+    plt.title('Ellipse Output Normalised')
+    plt.xlabel('Ellipse discriminant')
+    plt.ylabel('Occurences [Normalised]')
+    fig3.savefig(path_plots+'EllNormOut_mH_'+str(mH)+'_mA_'+str(mA)+'.png')
+    plt.close()

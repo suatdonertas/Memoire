@@ -31,7 +31,6 @@ def NNOutput(data,path_model):
         model.load_weights(f_weight)
         output += model.predict(data)
         n_model += 1
-        break
 
     output /= n_model
 
