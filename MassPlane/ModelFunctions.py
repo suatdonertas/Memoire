@@ -57,8 +57,8 @@ def EllipseOutput(data):
     out = np.ones(data.shape[0])*-1 
     for i in range(0,data.shape[0]):
         # Progress #
-        if i/data.shape[0]*100%10==0:
-            print ('\tProcessing ellipse : %0.f%%'%((i/data.shape[0])*100))
+        sys.stdout.write('\r\tProcessing ellipse : %0.f%%'%((i/data.shape[0])*100))
+        sys.stdout.flush()
 
         # Get ellipse configuration #
         x,y,a,b,t = getEllipseConf(data[i,3],data[i,2],ellipse_conf)
@@ -66,6 +66,7 @@ def EllipseOutput(data):
         masspoint = [data[i,1],data[i,0]] # (mjj,mlljj)
         instance = massWindow(filename=path_json)
         out[i] = instance.returnSigma(center=center,massPoint=masspoint)
+    print ()
     return out
 
 ############################################################################### 

@@ -9,7 +9,7 @@ from ROOT import TFile, TTree, TCanvas
 from root_numpy import tree2array
 
 from keras import utils
-from keras.layers import Input, Dense
+from keras.layers import Input, Dense, BatchNormalization
 from keras.models import Model
 from keras import losses, optimizers
 from keras.callbacks import EarlyStopping, CSVLogger, ReduceLROnPlateau, ModelCheckpoint
@@ -49,15 +49,17 @@ def NeuralNet(data,target,weight,layers,step=1,L2=0,print_plots=False,print_mode
     # Building layers #
     inputs = Input(shape=(X_train.shape[1],))
     Dx = Dense(layers[0], activation="relu")(inputs) # First layer
-    for i in range(1,len(layers)): # Hidden layers
+    #B = BatchNormalization()(Dx)
+    Dx = Dense(layers[1], activation="relu",kernel_regularizer=l2(L2))(Dx)
+    for i in range(2,len(layers)): # Hidden layers
         Dx = Dense(layers[i], activation="relu",kernel_regularizer=l2(L2))(Dx)
-    Dx = Dense(1, activation="sigmoid")(Dx)
+    Dx = Dense(1, activation="tanh")(Dx)
 
-    # Make directory for the model #
+        # Make directory for the model #
     if L2 == 0:
-        model_directory = np.array2string(layers).replace('[','_').replace(']','').replace(' ','_')
+        model_directory = np.array2string(layers).replace('[','_').replace(']','').replace(' ','_')+'_withweights_log_rescale_preset'
     else:
-        model_directory = np.array2string(layers).replace('[','_').replace(']','').replace(' ','_')+'_l2'
+        model_directory = np.array2string(layers).replace('[','_').replace(']','').replace(' ','_')+'_l2_withweights_log_rescale_preset'
     path_model = '/home/ucl/cp3/fbury/Memoire/MassPlane/learning_model/model'+model_directory+'/'
     path_plots = '/home/ucl/cp3/fbury/Memoire/MassPlane/learning_plots/model'+model_directory+'/'
     if not os.path.exists(path_plots):
@@ -66,26 +68,48 @@ def NeuralNet(data,target,weight,layers,step=1,L2=0,print_plots=False,print_mode
         os.makedirs(path_model)
 
     # Optimizer #
-    learning_rate = 0.1 
+    learning_rate = 0.01 
     adam = optimizers.Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-8, decay=0.0, amsgrad=False)
 
-    # Compile  #
+    # Build model  #
     print ('[INFO] Starting Learning')
     if L2 != 0:
         print ('L2 Regularization = ',str(L2))
     DNN = Model(inputs=[inputs], outputs=[Dx])
-    DNN.compile(optimizer='adam',loss='mean_squared_error',metrics=['accuracy'])
+
+    # Pre-set the weights #
+    with open('/home/ucl/cp3/fbury/Memoire/MassPlane/learning_model/model_30_30_30_l2/model_step_1.json', "r") as json_model_file:
+        model_json_save = json_model_file.read()
+    model_save = model_from_json(model_json_save) 
+    model_save.load_weights('/home/ucl/cp3/fbury/Memoire/MassPlane/learning_model/model_30_30_30_l2/weight_step1.h5')
+    weights_layer1 = model_save.layers[1].get_weights()
+    weights_layer2 = model_save.layers[2].get_weights()
+    weights_layer3 = model_save.layers[3].get_weights()
+    
+    weights_layer1[0] = np.concatenate((weights_layer1[0],np.random.uniform(0,1,size=(2,30))),axis=0)
+
+    del model_save
+    del model_json_save
+
+    DNN.layers[1].set_weights(weights_layer1)
+    DNN.layers[2].set_weights(weights_layer2)
+    DNN.layers[3].set_weights(weights_layer3)
+
+
+    # Compile #
+
+    DNN.compile(optimizer=adam,loss='mean_squared_error',metrics=['accuracy'])
 
     # Callback #
-    early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='min')
+    early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
     csv_logger = CSVLogger(path_model+'training_step_'+str(step)+'.log')
-    reduceLR = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, verbose=1, mode='min', epsilon=0.0001, cooldown=0, min_lr=0.0001)
-    checkpoint = ModelCheckpoint(path_model+'weight_step'+str(step)+'.h5', monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True, mode='min', period=1)
+    reduceLR = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, verbose=1, mode='min', epsilon=0.0001, cooldown=0, min_lr=0.001)
+    checkpoint = ModelCheckpoint(path_model+'weight_step'+str(step)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True, mode='min', period=1)
     Callback_list = [csv_logger,checkpoint,reduceLR,early_stopping]
 
 
     # Fit #
-    epoch = 50
+    epoch = 100
     batch = 1000
     history = DNN.fit(X_train, T_train, sample_weight=W_train, epochs=epoch, batch_size=batch, verbose=2, validation_data=(X_test,T_test,W_test), callbacks=Callback_list)
 

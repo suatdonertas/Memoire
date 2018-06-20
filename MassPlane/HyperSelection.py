@@ -9,9 +9,11 @@ import numpy as np
 import ROOT
 from ROOT import TFile, TTree, TCanvas
 from root_numpy import tree2array
+from sklearn import preprocessing
 
 # Personal files #
 from NeuralNet import NeuralNet
+from entropy_estimators import mi
 
 ###############################################################################
 # User's inputs #
@@ -41,11 +43,12 @@ with open(path_hyper+str(args.architecture),'r') as f:
 # Extract features from Root Files #
 ############################################################################### 
 #INPUT_FOLDER = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/factories_ZA/skimmedPlots_for_Florian/slurm/output/'
-INPUT_FOLDER = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/factories_ZA/add_met_mll_forFlorian/slurm/output/'
+#INPUT_FOLDER = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/factories_ZA/add_met_mll_forFlorian/slurm/output/'
+INPUT_FOLDER = '/home/ucl/cp3/fbury/storage/MoMEMta_output/'
 print ('='*80)
 print ('Starting input from files')
-back_set = np.zeros((0,2))
-sig_set = np.zeros((0,4))
+back_set = np.zeros((0,4))
+sig_set = np.zeros((0,6))
 sig_weight = np.zeros((0,1))
 back_weight = np.zeros((0,1))
 
@@ -61,7 +64,7 @@ N_sig = 0 # Number of events with same (mH,mA)
 # Get number of signal events
 for name in glob.glob(INPUT_FOLDER+'HToZATo2L2B*.root'):
     f = ROOT.TFile.Open(name)
-    t = f.Get("t")
+    t = f.Get("tree")
     N = t.GetEntries()
     S += N
     N_sig += 1
@@ -79,11 +82,13 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
         Sig = False #Background case
 
     f = ROOT.TFile.Open(name)
-    t = f.Get("t")
+    t = f.Get("tree")
     
     selection = 'met_pt<80 && ll_M>70 && ll_M<110'
     jj_M = np.asarray(tree2array(t, branches='jj_M',selection=selection))
     lljj_M = np.asarray(tree2array(t, branches='lljj_M',selection=selection))
+    MEM_TT = np.asarray(tree2array(t, branches='weight_TT',selection=selection))
+    MEM_DY = np.asarray(tree2array(t, branches='weight_DY',selection=selection))
     total_weight = np.asarray(tree2array(t, branches='total_weight',selection=selection))
     N = jj_M.shape[0]
     if Sig: #Signal
@@ -113,7 +118,7 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
         gen_choices = np.concatenate((gen_choices,gen_config),axis=0)
 
         # Append mlljj,mjj,mH,mA data to signal dataset
-        sig_data = np.stack((lljj_M,jj_M,mH,mA),axis=1)
+        sig_data = np.stack((lljj_M,jj_M,MEM_TT,MEM_DY,mH,mA),axis=1)
         sig_set = np.concatenate((sig_set,sig_data),axis=0) 
         print ('\t-> Size = %i,\ttotal signal size = %i' %(sig_data.shape[0],sig_set.shape[0]))
 
@@ -124,7 +129,7 @@ for name in glob.glob(INPUT_FOLDER+'*.root'):
         back_weight = np.concatenate((back_weight,weight),axis=0)
 
         # Append mlljj and mjj data to background dataset
-        back_data = np.stack((lljj_M,jj_M),axis=1)
+        back_data = np.stack((lljj_M,jj_M,MEM_TT,MEM_DY),axis=1)
         back_set = np.concatenate((back_set,back_data),axis=0)
         print ('\t-> Size = %i,\ttotal background size = %i' %(back_data.shape[0],back_set.shape[0]))
 
@@ -164,7 +169,26 @@ data = np.concatenate((sig_set,back_set),axis=0)
 # data = [sig target weights
 #         back targets weigths]     
 
+# Weight preprocessing #
+#data[:,2] /= np.max(data[:,2])
+#data[:,3] /= np.max(data[:,3])
+valid_id = np.logical_and(data[:,2]>10e-35,data[:,3]>10e-35)
+data = data[valid_id]
+data[:,2] = -np.log10(data[:,2])
+data[:,3] = -np.log10(data[:,3])
 
+print (data[:,6].shape)
+print ("Mi with masses : ", mi(np.c_[data[:,:2],data[:,4:6]],data[:,6].reshape(-1,1)))
+print ("Mi with masses and weights : ", mi(data[:,:6],data[:,6].reshape(-1,1)))
+
+sys.exit()
+
+min_max_scaler = preprocessing.MinMaxScaler(feature_range=(np.amin(data[:,0]),np.amax(data[:,0])))
+#data = np.c_[min_max_scaler.fit_transform(data[:,:6]),data[:,6:]]
+data = np.c_[data[:,:2],min_max_scaler.fit_transform(data[:,2:4]),data[:,4:]]
+#data = np.c_[preprocessing.scale(data[:,:6]),data[:,6:]]
+for i in range(0,50):
+    print (data[i,2:4])
 print ('Total learning size = ',data.shape[0])
 
 
@@ -198,8 +222,8 @@ for l in range(0,archi.shape[0]): # Loop over the architectures in the file
         T = data[:,nf:nf+1]
         W = data[:,nf+1:nf+2]
         
-        err,AUC = NeuralNet(data=X,target=T,weight=W,layers=archi[l,:],step=i,L2=L2,print_plots=True,print_model=False)
-        if AUC<0.6:
+        err,AUC = NeuralNet(data=X,target=T,weight=W,layers=archi[l,:],step=i,L2=L2,print_plots=True,print_model=True)
+        if AUC<0.9:
             fail += 1
             print ('\t-> Error, wrong learning (%i times)\n'%(fail))
             continue
@@ -212,7 +236,7 @@ for l in range(0,archi.shape[0]): # Loop over the architectures in the file
         AUC_array = np.append(AUC_array,AUC) 
         
     path_model = '/home/ucl/cp3/fbury/Memoire/MassPlane/learning_model/'
-    with open(path_model+'comparison', 'a') as outfile:
+    with open(path_model+'comparison_layer', 'a') as outfile:
         outfile.write('architecture : '+np.array2string(archi[l,:])+' l2 = '+str(L2)) 
         outfile.write('\n\tRMS : '+np.array2string(err_array)+' => '+str(err_avg))
         outfile.write('\n\tAUC : '+np.array2string(AUC_array)+' => '+str(AUC_avg)+'\n')

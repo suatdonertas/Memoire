@@ -35,7 +35,7 @@ args = parser.parse_args()
 print ('Model used : '+str(args.model))
 
 path_tree = '/home/ucl/cp3/fbury/storage/NNAndELLipseOutputTrees/model_'+str(args.model)+'/'
-path_plots = '/home/ucl/cp3/fbury/Memoire/MassPlane/graph_ROC/model_test2_'+str(args.model)+'/'
+path_plots = '/home/ucl/cp3/fbury/Memoire/MassPlane/graph_ROC/model_sup_'+str(args.model)+'/'
 if not os.path.exists(path_plots):
     os.makedirs(path_plots)
 ################################################################################
@@ -93,6 +93,22 @@ for name in glob.glob(path_tree+'*.root'):
     Z_NN = significance(sig_frac_z,back_frac_z)
     Z_ell = significance(sig_frac_e,back_frac_e)
 
+    max_Z_NN = np.argmax(Z_NN)
+    max_Z_ell = np.argmax(Z_ell)
+
+    def find_nearest(array,value):
+        idx = (np.abs(array-value)).argmin()
+        return idx
+
+    print ('Ellipse Max significance = ',Z_ell[max_Z_ell])
+    print ('NN Max significance = ',Z_NN[max_Z_NN])
+    print ('Relative difference = ',abs(Z_NN[max_Z_NN]-Z_ell[max_Z_ell])/Z_ell[max_Z_ell]*100)
+    print ('NN signal efficiency at max Z =',sig_eff_z[max_Z_NN]*100)
+    print ('Ellipse equivalent sig eff = ',sig_eff_e[find_nearest(sig_eff_e,sig_eff_z[max_Z_NN])]*100)
+    print ('NN background eff at max Z = ',back_eff_z[max_Z_NN]*100)
+    print ('Ellipse equivalent back eff = ',back_eff_e[find_nearest(sig_eff_e,sig_eff_z[max_Z_NN])]*100)
+    print ('Difference in background eff at max Z = ',abs(back_eff_z[max_Z_NN]-back_eff_e[find_nearest(sig_eff_e,sig_eff_z[max_Z_NN])])*100)
+
     # Operating Point #
     op_sig_NN = NNOperatingPoint(sig[:]['NN_out'],sig[:]['weight'],cut_NN)
     op_back_NN = NNOperatingPoint(back[:]['NN_out'],back[:]['weight'],cut_NN)
@@ -103,7 +119,7 @@ for name in glob.glob(path_tree+'*.root'):
     # ROC curve #
     fig1 = plt.figure(1,figsize=(10,5))
     ax1 = plt.subplot(111)
-    plt.title('ROC Curve : $m_H$ = %0.f, $m_A$ = %0.f'%(mH,mA))
+    plt.title('ROC Curve : $m_H$ = %0.f GeV, $m_A$ = %0.f GeV'%(mH,mA))
     ax1.plot(sig_eff_z, back_eff_z,'b-', label=('NN Output : AUC = %0.5f'%(roc_auc_z)))
     ax1.plot(sig_eff_e, back_eff_e, 'g-', label=('Ellipse Output : AUC = %0.5f'%(roc_auc_e)))
     ax2 = ax1.twinx()
@@ -127,10 +143,10 @@ for name in glob.glob(path_tree+'*.root'):
     ax2.set_position([box.x0, box.y0, box.width*0.6, box.height])
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines1[0:2]+lines2+lines1[2:],labels1[0:2]+labels2+labels1[2:],loc='upper left',bbox_to_anchor=(1.1, 1),fancybox=True, shadow=True,labelspacing=0.8)
+    ax2.legend(lines1[0:2]+lines2+lines1[2:],labels1[0:2]+labels2+labels1[2:],loc='upper left',bbox_to_anchor=(1.15, 1),fancybox=True, shadow=True,labelspacing=0.8)
     #plt.show()
     fig1.savefig(path_plots+'ROC_mH_'+str(mH)+'_mA_'+str(mA)+'.png')
-    print ('[INFO] ROC curve plot saved as : '+str(mH)+'_mA_'+str(mA)+'.png')
+    print ('[INFO] ROC curve plot saved as : 'path_plots+'ROC_mH_'+str(mH)+'_mA_'+str(mA)+'.png')
     plt.close()
 
     # NN output plot #

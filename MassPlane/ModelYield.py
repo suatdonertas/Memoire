@@ -56,7 +56,7 @@ for name in glob.glob(path_tree+'*.root'):
     num = [int(s) for s in re.findall('\d+',filename )]
     if num[0]!=mH_select or num[1]!=mA_select:
         continue
-
+    break
     f = ROOT.TFile.Open(name)
     t = f.Get("tree")
 
@@ -100,3 +100,44 @@ for name in glob.glob(path_tree+'*.root'):
         print ('TT_Other\t%0.f\t%0.2f'%(TT_Other[TT_Other[:]['Ell_out']<ce].shape[0],N_TT_Other))
         print ('TTTo2L2Nu\t%0.f\t%0.2f'%(TTTo2L2Nu[TTTo2L2Nu[:]['Ell_out']<ce].shape[0],N_TTTo2L2Nu))
     
+
+################################################################################
+# Precut efficiencies #
+################################################################################
+path_back = '/nfs/scratch/fynu/asaggio/CMSSW_8_0_30/src/cp3_llbb/ZATools/factories_ZA/fourVectors_withMETphi_for_Florian/slurm/output/'
+for name in glob.glob(path_back+'*.root'):
+    if name.startswith(path_back+'HToZA'):
+        continue
+    print (name.replace(path_back,''))
+
+    f = ROOT.TFile.Open(name)
+    t = f.Get("t")
+
+    L = 35922
+    weight = tree2array(t,branches=['total_weight','ll_M','met_pt'])
+    xsec = f.Get('cross_section').GetVal()
+    sum_weight = f.Get('event_weight_sum').GetVal()
+
+    # Precuts #
+    norm_pre = np.sum(weight['total_weight'])*L*xsec/sum_weight
+    print ('\tPrecuts : ',norm_pre)
+    print ('\tEfficiency : ',np.sum(weight['total_weight'])/sum_weight*100)
+
+    # Mll cut #
+    weight_mll = weight['total_weight'][np.logical_and(weight['ll_M']>70,weight['ll_M']<110)]
+    norm_mll = np.sum(weight_mll)*L*xsec/sum_weight
+    print ('\tMll cut : ',norm_mll)
+    print ('\tEfficiency : ',norm_mll/norm_pre*100)
+
+    # MET cut #
+    weight_met = weight['total_weight'][weight['met_pt']<80]
+    norm_met = np.sum(weight_met)*L*xsec/sum_weight
+    print ('\tMET cut : ',norm_met)
+    print ('\tEfficiency : ',norm_met/norm_pre*100)
+
+    # Both cuts #
+    weight_both = weight['total_weight'][np.logical_and(np.logical_and(weight['ll_M']>70,weight['ll_M']<110),weight['met_pt']<80)]
+    norm_both = np.sum(weight_both)*L*xsec/sum_weight
+    print ('\tBoth cuts : ',norm_both)
+    print ('\tEfficiency : ',norm_both/norm_pre*100)
+

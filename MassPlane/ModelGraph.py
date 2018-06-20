@@ -125,11 +125,11 @@ while mH_pos[s]<=1000:
         inc_y = 30
         inc_x = 30
     if mH_pos[s]>600:
-        inc_y = 40
-        inc_x = 40
-    if mH_pos[s]>700:
         inc_y = 50
         inc_x = 50
+    if mH_pos[s]>700:
+        inc_y = 70
+        inc_x = 70
     s += 1
 
 #mHmA = np.c_[mH_pos,mA_pos]
@@ -145,7 +145,7 @@ print('[INFO] Printing Canvas')
 
 print ('[INFO] Starting loop over (mH,mA)')
 N = 100
-rho = 2
+rho = 1
 for c in range(0,mHmA.shape[0]):
     c1 = TCanvas( 'c1', 'MassPlane', 200, 10, 1200, 700 )
     c1.SetFillColor( 10 )
@@ -192,7 +192,7 @@ for c in range(0,mHmA.shape[0]):
 
     title = TPaveText( .3, 0.9, .7, .99 )
     title.SetFillColor( 33 )
-    title.AddText('Mass Plane (m_{H} = %0.f, m_{A} = %0.f)'%(mHmA[c,0],mHmA[c,1]))
+    title.AddText('Mass Plane (m_{H} = %0.f GeV, m_{A} = %0.f GeV)'%(mHmA[c,0],mHmA[c,1]))
     title.Draw()
 
     pad1 = TPad( 'pad1', 'Surface', 0.03, 0.10, 0.50, 0.85, 21 )
@@ -203,15 +203,15 @@ for c in range(0,mHmA.shape[0]):
     # Draw Graph (TRI) #
     graph_tri = graph.GetHistogram()
     pad1.cd()
-    graph_tri.SetTitle('Surface Plot;M_{bb};M_{llbb}')
+    graph_tri.SetTitle('Surface Plot [GeV];M_{bb};M_{llbb} [GeV]')
     gPad.SetLeftMargin(0.1)
     graph_tri.Draw('TRI2')
     gPad.Update
     graph_tri.SetTitle('Surface Plot')
     graph_tri.GetZaxis().SetRangeUser(0,1.0)
-    graph_tri.GetXaxis().SetTitle('M_{bb}')
+    graph_tri.GetXaxis().SetTitle('M_{bb} [GeV]')
     graph_tri.GetXaxis().SetTitleOffset(2)
-    graph_tri.GetYaxis().SetTitle('M_{llbb}')
+    graph_tri.GetYaxis().SetTitle('M_{llbb} [GeV]')
     graph_tri.GetYaxis().SetTitleOffset(2)
     graph_tri.GetZaxis().SetTitle('DNN Output')
     graph_tri.GetZaxis().SetTitleOffset(1.5)
@@ -226,12 +226,12 @@ for c in range(0,mHmA.shape[0]):
     ROOT.SetOwnership( graph, True )
     # Generate Th2F from TGraph2D #
     mH_binmax = 1000
-    mH_nbin = 2000
+    mH_nbin = 3000
     mH_bins = np.linspace(0,mH_binmax,mH_nbin)
     mA_binmax = 1000
-    mA_nbin = 2000
+    mA_nbin = 3000
     mA_bins = np.linspace(0,mA_binmax,mA_nbin)
-    graph_cont = TH2F('mass_plane','Contour Plot;M_{bb};M_{llbb}',mA_nbin,0,mA_binmax,mH_nbin,0,mH_binmax)
+    graph_cont = TH2F('mass_plane','Contour Plot;M_{bb} [GeV];M_{llbb} [GeV]',mA_nbin,0,mA_binmax,mH_nbin,0,mH_binmax)
     for mh in mH_bins:
         for ma in mA_bins:
             out_graph = graph.Interpolate(ma,mh)
@@ -248,7 +248,7 @@ for c in range(0,mHmA.shape[0]):
     #graph_cont.SetContourLevel(5,0.95)
     graph_cont.Draw('CONT1')
     graph_cont.Draw('CONTZ same')
-    graph_cont.SetTitle('Contour Plot;M_{bb};M_{llbb}')
+    graph_cont.SetTitle('Contour Plot;M_{bb} [GeV];M_{llbb} [GeV]')
     graph_cont.GetZaxis().SetTitle('DNN Output')
     graph_cont.GetZaxis().SetRangeUser(0,1.0)
     gPad.SetRightMargin(0.15)

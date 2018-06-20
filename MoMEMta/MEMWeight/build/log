@@ -1,0 +1,45 @@
+[ 28%] Built target gflags_nothreads_static
+[ 35%] Building CXX object CMakeFiles/MEMWeight.dir/src/main.cc.o
+/home/ucl/cp3/fbury/Memoire/MoMEMta/MEMWeight/src/main.cc: In function ‘int main(int, char**)’:
+/home/ucl/cp3/fbury/Memoire/MoMEMta/MEMWeight/src/main.cc:201:32: error: ‘met_p4M’ was not declared in this scope
+         LorentzVector met_p4 { met_p4M.Px(), met_p4M.Py(), met_p4M.Pz(), met_p4M.E() };
+                                ^~~~~~~
+/home/ucl/cp3/fbury/Memoire/MoMEMta/MEMWeight/src/main.cc:201:32: note: suggested alternative: ‘met_p4’
+         LorentzVector met_p4 { met_p4M.Px(), met_p4M.Py(), met_p4M.Pz(), met_p4M.E() };
+                                ^~~~~~~
+                                met_p4
+/home/ucl/cp3/fbury/Memoire/MoMEMta/MEMWeight/src/main.cc:201:86: error: no matching function for call to ‘ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >::LorentzVector(<brace-enclosed initializer list>)’
+         LorentzVector met_p4 { met_p4M.Px(), met_p4M.Py(), met_p4M.Pz(), met_p4M.E() };
+                                                                                      ^
+In file included from /cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/Vector4D.h:18:0,
+                 from /home/ucl/cp3/fbury/.local/include/momemta/Types.h:22,
+                 from /home/ucl/cp3/fbury/.local/include/momemta/Utils.h:25,
+                 from /home/ucl/cp3/fbury/.local/include/momemta/impl/Pool.h:30,
+                 from /home/ucl/cp3/fbury/.local/include/momemta/Module.h:22,
+                 from /home/ucl/cp3/fbury/.local/include/momemta/MoMEMta.h:25,
+                 from /home/ucl/cp3/fbury/Memoire/MoMEMta/MEMWeight/src/main.cc:28:
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:90:17: note: candidate: template<class ForeignLorentzVector> ROOT::Math::LorentzVector<CoordSystem>::LorentzVector(const ForeignLorentzVector&)
+        explicit LorentzVector( const ForeignLorentzVector & v) :
+                 ^~~~~~~~~~~~~
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:90:17: note:   template argument deduction/substitution failed:
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:82:17: note: candidate: template<class Coords> ROOT::Math::LorentzVector<CoordSystem>::LorentzVector(const ROOT::Math::LorentzVector<Coords>&)
+        explicit LorentzVector(const LorentzVector<Coords> & v ) :
+                 ^~~~~~~~~~~~~
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:82:17: note:   template argument deduction/substitution failed:
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:71:8: note: candidate: ROOT::Math::LorentzVector<CoordSystem>::LorentzVector(const Scalar&, const Scalar&, const Scalar&, const Scalar&) [with CoordSystem = ROOT::Math::PxPyPzE4D<double>; ROOT::Math::LorentzVector<CoordSystem>::Scalar = double]
+        LorentzVector(const Scalar & a,
+        ^~~~~~~~~~~~~
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:71:8: note:   conversion of argument 1 would be ill-formed:
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:60:8: note: candidate: ROOT::Math::LorentzVector<CoordSystem>::LorentzVector() [with CoordSystem = ROOT::Math::PxPyPzE4D<double>]
+        LorentzVector ( ) : fCoordinates() { }
+        ^~~~~~~~~~~~~
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:60:8: note:   candidate expects 0 arguments, 4 provided
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:48:11: note: candidate: ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >::LorentzVector(const ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >&)
+     class LorentzVector {
+           ^~~~~~~~~~~~~
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:48:11: note:   candidate expects 1 argument, 4 provided
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:48:11: note: candidate: ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >::LorentzVector(ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> >&&)
+/cvmfs/cp3.uclouvain.be/root/root-6.12.04-sl7_amd64_gcc73/include/Math/GenVector/LorentzVector.h:48:11: note:   candidate expects 1 argument, 4 provided
+make[2]: *** [CMakeFiles/MEMWeight.dir/src/main.cc.o] Error 1
+make[1]: *** [CMakeFiles/MEMWeight.dir/all] Error 2
+make: *** [all] Error 2
